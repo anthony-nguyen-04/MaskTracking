@@ -52,6 +52,8 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 while True:
 
+    key = cv2.waitKey(1)
+
     _, frame = video.read()
     height, width, _ = frame.shape
 
@@ -88,6 +90,8 @@ while True:
 
     cv2.imshow("video", frame)
     cv2.imshow("white", whiteScreen)
-    cv2.waitKey(1)
+
+    if key == ord('q'):
+        break
 
 
