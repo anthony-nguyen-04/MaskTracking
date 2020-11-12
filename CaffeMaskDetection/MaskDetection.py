@@ -6,6 +6,7 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 from imutils.video import VideoStream
+from pathlib import Path
 import numpy as np
 import imutils
 import time
@@ -37,7 +38,7 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
 
 		# filter out weak detections by ensuring the confidence is
 		# greater than the minimum confidence
-		if confidence > 0.5:
+		if confidence > 0.75:
 			# compute the (x, y)-coordinates of the bounding box for
 			# the object
 			box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
@@ -73,16 +74,21 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
 	# locations
 	return (locs, preds)
 
+path = Path(__file__).parent.absolute().parent.absolute()
+
+# makes windows fullscreen
+#cv2.namedWindow("mask detection", cv2.WINDOW_NORMAL)
+#cv2.setWindowProperty("mask detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 # load our serialized face detector model from disk
 print("[INFO] loading face detector model...")
-prototxtPath = "E:\\Coding\\MaskTracking\\MaskTracking\\CaffeMaskDetection\\deploy.prototxt"
-weightsPath = "E:\\Coding\\MaskTracking\\MaskTracking\\CaffeMaskDetection\\res10_300x300_ssd_iter_140000.caffemodel"
+prototxtPath = os.path.sep.join([str(path), "CaffeMaskDetection\\deploy.prototxt"])
+weightsPath = os.path.sep.join([str(path), "CaffeMaskDetection\\res10_300x300_ssd_iter_140000.caffemodel"])
 faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
 # load the face mask detector model from disk
 print("[INFO] loading face mask detector model...")
-maskNet = load_model("E:\\Coding\\MaskTracking\\MaskTracking\\mask_recog_ver2.h5")
+maskNet = load_model(os.path.sep.join([str(path), "maskRecogModel.h5"]))
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
@@ -94,7 +100,6 @@ while True:
 	# grab the frame from the threaded video stream and resize it
 	# to have a maximum width of 400 pixels
 	frame = vs.read()
-	frame = imutils.resize(frame, width=400)
 
 	# detect faces in the frame and determine if they are wearing a
 	# face mask or not
@@ -122,7 +127,8 @@ while True:
 		cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
 	# show the output frame
-	cv2.imshow("Frame", frame)
+	cv2.resize(frame, (1920, 1080))
+	cv2.imshow("mask detection", frame)
 	key = cv2.waitKey(1) & 0xFF
 
 	# if the `q` key was pressed, break from the loop

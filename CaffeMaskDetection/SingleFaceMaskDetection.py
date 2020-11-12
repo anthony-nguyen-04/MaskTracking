@@ -130,9 +130,7 @@ while True:
     (startX, startY, endX, endY) = closestFaceBox
     (mask, withoutMask) = closestFacePred
 
-    #(personStartX, personStartY, personEndX, personEndY) = (max(startX-10), max(startY-10, 0), min(endX+10,w), min(endY+10, h))
-
-    personOnlyFrame = dupeFrame[max(startY-10, 0):min(endY+10, h), max(startX-10, 0):min(endX+10, w)]
+    personOnlyFrame = dupeFrame[max(startY-25, 0):min(endY+10, h), max(startX-25, 0):min(endX+25, w)]
 
     # determine the class label and color we'll use to draw
     # the bounding box and text
@@ -153,6 +151,7 @@ while True:
 
     try:
         cv2.imshow("Person Only", personOnlyFrame)
+        cv2.imwrite("../MaskedImages/anthony2.jpg", personOnlyFrame)
     except cv2.error as e:
         pass
 
