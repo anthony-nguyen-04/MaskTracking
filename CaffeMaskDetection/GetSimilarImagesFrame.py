@@ -47,17 +47,17 @@ def cluster():
     # Defining data structures as empty dict
     file_index_to_file_name = {}
     file_index_to_file_vector = {}
-    #file_index_to_product_id = {}
 
     # Configuring annoy parameters
     dims = 1792
-    n_nearest_neighbors = 1  # amount of neighbors
-    trees = 10000
+    n_nearest_neighbors = 5  # amount of neighbors
+    trees = 15000 #10000
 
     # Reads all file names which stores feature vectors
     allfiles = os.listdir(os.path.sep.join([str(path), "FeatureVectors"]))
 
-    t = AnnoyIndex(dims, metric='angular')
+    # formerly, angular -> euclidean -> manhattan -> hamming -> dot
+    t = AnnoyIndex(dims, metric='euclidean')
 
     for file_index, i in enumerate(allfiles):
         # Reads feature vectors and assigns them into the file_vector
@@ -81,7 +81,7 @@ def cluster():
     for i in file_index_to_file_name.keys():
 
         # only find comparison for the frame vector
-        if (file_index_to_file_name[i] != "anthony2"):
+        if (file_index_to_file_name[i] != "frame"):
             continue
 
         # Assigns master file_name, image feature vectors and product id values
@@ -114,9 +114,9 @@ def cluster():
                 'master_name' : master_file_name,
                 'similar_name' : neighbor_file_name})
 
-            # if frame vector is found, end loop
-            if (file_index_to_file_name[i] == "anthony2"):
-                break
+        # if frame vector is found, end loop
+        if (file_index_to_file_name[i] == "frame"):
+            break
 
 
     # Writes the 'named_nearest_neighbors' to a json file
@@ -125,7 +125,7 @@ def cluster():
 
     #maybe just have it return the dictionary
 
+    return named_nearest_neighbors
 
-
-cluster()
+#cluster()
 

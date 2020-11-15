@@ -50,46 +50,15 @@ def load_img(path):
 # Makes an inference for all images stored in a local folder
 # Saves each of the feature vectors in a file
 #################################################
-def get_image_feature_vectors():
+def get_image_feature_vectors(module):
     path = Path(__file__).parent.absolute().parent.absolute()
-
-    i = 0
-
-    start_time = time.time()
-
-    print("---------------------------------")
-    print("Step.1 of 2 - mobilenet_v2_140_224 - Loading Started at %s" % time.ctime())
-    print("---------------------------------")
-
-    # Definition of module with using tfhub.dev handle
-    module_handle = os.path.sep.join([str(path), "CaffeMaskDetection",
-                                      "tfhub"])
-
-    # Load the module
-    module = hub.load(module_handle)
-
-    print("---------------------------------")
-    print("Step.1 of 2 - mobilenet_v2_140_224 - Loading Completed at %s" % time.ctime())
-    print("--- %.2f minutes passed ---------" % ((time.time() - start_time) / 60))
-
-    print("---------------------------------")
-    print("Step.2 of 2 - Generating Feature Vectors -  Started at %s" % time.ctime())
-
-    #os.path.sep.join([str(path), "maskRecogModel.h5"])
 
     # Loops through all images in a local folder
     for filename in os.listdir(os.path.sep.join([str(path), "MaskedImages"])):  # assuming all are images
         npzFile = str(os.path.sep.join([str(path), "FeatureVectors", str(filename.split(".")[0] + ".npz")]))
 
-        if os.path.exists(npzFile):
-            print(str(filename) + ": skipped")
+        if os.path.exists(npzFile) and (str(filename) != "frame.jpg"):
             continue
-
-        i = i + 1
-
-        print("-----------------------------------------------------------------------------------------")
-        print("Image count                     :%s" % i)
-        print("Image in process is             :%s" % filename)
 
         # Loads and pre-process the image
         img = load_img(os.path.sep.join([str(path), "MaskedImages", filename]))
@@ -107,12 +76,5 @@ def get_image_feature_vectors():
         # Saves the 'feature_set' to a text file
         np.savetxt(out_path, feature_set, delimiter=',')
 
-        print("Image feature vector saved to   :%s" % out_path)
 
-    print("---------------------------------")
-    print("Step.2 of 2 - Generating Feature Vectors - Completed at %s" % time.ctime())
-    print("--- %.2f minutes passed ---------" % ((time.time() - start_time) / 60))
-    print("--- %s images processed ---------" % i)
-
-
-get_image_feature_vectors()
+#get_image_feature_vectors()

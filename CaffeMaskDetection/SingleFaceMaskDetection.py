@@ -5,14 +5,19 @@
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
+import tensorflow_hub as hub
 from imutils.video import VideoStream
 from pathlib import Path
 import numpy as np
 import imutils
+import json
 import time
 import cv2
 import os
 
+from CaffeMaskDetection import GetIdentity
+from CaffeMaskDetection import GetFeatureVectors
+from CaffeMaskDetection import GetSimilarImagesFrame
 
 def detect_and_predict_mask(frame, faceNet, maskNet):
     # grab the dimensions of the frame and then construct a blob
@@ -102,12 +107,24 @@ faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
 # load the face mask detector model from disk
 print("[INFO] loading face mask detector model...")
-maskNet = load_model(os.path.sep.join([str(path), "maskRecogModel.h5"]))
+maskNet = load_model(os.path.sep.join([str(path), "CaffeMaskDetection", "maskRecogModel.h5"]))
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
 vs = VideoStream(src=0).start()
 time.sleep(2.0)
+
+###########
+startTime = time.time()
+
+identityLabel = ""
+
+# Definition of module with using tfhub.dev handle
+module_handle = os.path.sep.join([str(path), "CaffeMaskDetection", "tfhub"])
+
+# Load the module
+module = hub.load(module_handle)
+###########
 
 # loop over the frames from the video stream
 while True:
@@ -130,7 +147,9 @@ while True:
     (startX, startY, endX, endY) = closestFaceBox
     (mask, withoutMask) = closestFacePred
 
-    personOnlyFrame = dupeFrame[max(startY-25, 0):min(endY+10, h), max(startX-25, 0):min(endX+25, w)]
+    # gets the person-only frame from video feed
+    # this person-only frame gets sent through algorithm to determine identity
+    personOnlyFrame = dupeFrame[max(startY-15, 0):min(endY+10, h-1), max(startX-10, 0):min(endX+10, w-1)]
 
     # determine the class label and color we'll use to draw
     # the bounding box and text
@@ -146,14 +165,36 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
-    # show the output frame
-    cv2.imshow("Frame", frame)
-
     try:
         cv2.imshow("Person Only", personOnlyFrame)
-        cv2.imwrite("../MaskedImages/anthony2.jpg", personOnlyFrame)
+
+        x = int(time.time() - startTime)
+
+        if (mask > withoutMask): #and (x % 5 == 0) and x != temp:
+            cv2.imwrite("..\\MaskedImages\\frame.jpg", personOnlyFrame)
+
+            GetFeatureVectors.get_image_feature_vectors(module)
+            closestPerson = GetSimilarImagesFrame.cluster()
+
+            identity = (closestPerson[0]).get('similar_name')
+            percentage = (closestPerson[0]).get('similarity')
+
+            identityLabel = "{}: {:.2f}%".format(GetIdentity.getIdentity(identity), percentage * 100)
+
+            #cv2.putText(frame, identityLabel, (startX, startY - 30),
+            #            cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+
+        elif (withoutMask > mask):
+            identityLabel = ""
+
     except cv2.error as e:
         pass
+
+    cv2.putText(frame, identityLabel, (startX, startY - 30),
+               cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+
+    # show the output frame
+    cv2.imshow("Frame", frame)
 
     key = cv2.waitKey(1) & 0xFF
 
